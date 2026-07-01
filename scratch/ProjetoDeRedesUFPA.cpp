@@ -9,6 +9,7 @@
 #include "ns3/csma-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/flow-monitor-module.h"
+#include "ns3/netanim-module.h"
 
 #include <iostream>
 #include <map>
@@ -116,7 +117,17 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
     serverApp.Start(Seconds(1.0));
     serverApp.Stop(Seconds(10.0));
 
-    UdpEchoClientHelper clienteVendas( // Cria um cliente que envia pacotes para porta 1
+    UdpEchoServerHelper servidorArquivos(10); // Cria um servidor udp que escuta a porta 10, servidor de arquivos
+
+    ApplicationContainer serverApp2 =
+        servidorArquivos.Install(nosDevs.Get(1));
+
+    serverApp2.Start(Seconds(1.0));
+    serverApp2.Stop(Seconds(10.0));
+
+    // CLIENTE 1 =============================
+
+    UdpEchoClientHelper clienteVendas( // Cria um cliente que envia pacotes para porta 9
         ipsDevs.GetAddress(1),
         9);
 
@@ -139,6 +150,38 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
     clientApp.Start(Seconds(2.0)); // Define quando a aplicação começa e quando termina
     clientApp.Stop(Seconds(10.0));
 
+    // CLIENTE 2 =============================
+
+    UdpEchoClientHelper clienteVendas2(
+    ipsDevs.GetAddress(2), // endereço IP do servidor de arquivos
+    10);
+
+    clienteVendas2.SetAttribute("MaxPackets", UintegerValue(15));
+    clienteVendas2.SetAttribute("Interval", TimeValue(MilliSeconds(300)));
+    clienteVendas2.SetAttribute("PacketSize", UintegerValue(512));
+
+    ApplicationContainer client2 =
+        clienteVendas2.Install(nosVendas.Get(1));
+
+    client2.Start(Seconds(2.5));
+    client2.Stop(Seconds(10.0));
+
+    // CLIENTE 3 =============================
+
+    UdpEchoClientHelper clienteEscritorio(
+    ipsDevs.GetAddress(1),
+    9);
+
+    clienteEscritorio.SetAttribute("MaxPackets", UintegerValue(20));
+    clienteEscritorio.SetAttribute("Interval", TimeValue(MilliSeconds(200)));
+    clienteEscritorio.SetAttribute("PacketSize", UintegerValue(256));
+
+    ApplicationContainer client3 =
+        clienteEscritorio.Install(nosEscritorio.Get(0));
+
+    client3.Start(Seconds(3.0));
+    client3.Stop(Seconds(10.0));
+
     // CAPTURA PCAP, salva todos os pacotes em um arquivo .pcap, que pode ser analisado no wireshark
 
     csmaEscritorio.EnablePcapAll("escritorio");
@@ -154,6 +197,29 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
     NS_LOG_INFO("Iniciando simulação...");
 
     Simulator::Stop(Seconds(10.0)); // Define quando a simulação termina
+
+    AnimationInterface anim ("simulacao.xml");
+
+    // Roteador
+    anim.SetConstantPosition(roteadorCentral, 50, 50);
+
+    // Escritório
+    anim.SetConstantPosition(nosEscritorio.Get(0), 15, 20);
+    anim.SetConstantPosition(nosEscritorio.Get(1), 15, 50);
+    anim.SetConstantPosition(nosEscritorio.Get(2), 15, 80);
+
+    // Vendas
+    anim.SetConstantPosition(nosVendas.Get(0), 50, 20);
+    anim.SetConstantPosition(nosVendas.Get(1), 50, 40);
+    anim.SetConstantPosition(nosVendas.Get(2), 50, 60);
+    anim.SetConstantPosition(nosVendas.Get(3), 50, 80);
+
+    // Desenvolvimento
+    anim.SetConstantPosition(nosDevs.Get(0), 85, 20);
+    anim.SetConstantPosition(nosDevs.Get(1), 85, 40);
+    anim.SetConstantPosition(nosDevs.Get(2), 85, 60);
+    anim.SetConstantPosition(nosDevs.Get(3), 85, 80);
+
     Simulator::Run(); // Executa toda a simulação
 
     // RESULTADOS DA SIMULAÇÃO
