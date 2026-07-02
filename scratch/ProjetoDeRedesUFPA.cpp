@@ -109,6 +109,8 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
 
     // 5. APLICAÇÕES
 
+    //servidor 1
+
     UdpEchoServerHelper servidorDev(9); // Cria um servidor udp que escuta a porta 9
 
     ApplicationContainer serverApp =
@@ -117,6 +119,9 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
     serverApp.Start(Seconds(1.0));
     serverApp.Stop(Seconds(10.0));
 
+
+    //servidor 2
+
     UdpEchoServerHelper servidorArquivos(10); // Cria um servidor udp que escuta a porta 10, servidor de arquivos
 
     ApplicationContainer serverApp2 =
@@ -124,6 +129,16 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
 
     serverApp2.Start(Seconds(1.0));
     serverApp2.Stop(Seconds(10.0));
+
+    //servidor 3
+
+    UdpEchoServerHelper servidorEscritorio(11);// Cria um servidor udp que escuta a porta 11, servidor de arquivos
+
+    ApplicationContainer serverApp3 =
+        servidorEscritorio.Install(nosEscritorio.Get(1));
+
+        serverApp3.Start(Seconds(1.0));
+        serverApp3.Stop(Seconds(10.0));
 
     // CLIENTE 1 =============================
 
@@ -181,6 +196,100 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
 
     client3.Start(Seconds(3.0));
     client3.Stop(Seconds(10.0));
+
+    // CLIENTE 4 ========================================
+    UdpEchoClientHelper clienteEscritorio2(
+        ipsDevs.GetAddress(1), 
+        9);                    
+
+  
+    clienteEscritorio2.SetAttribute(
+        "MaxPackets",
+        UintegerValue(12));
+
+  
+    clienteEscritorio2.SetAttribute(
+        "Interval",
+        TimeValue(MilliSeconds(400)));
+
+    clienteEscritorio2.SetAttribute(
+        "PacketSize",
+        UintegerValue(400));
+
+    ApplicationContainer client4 =
+        clienteEscritorio2.Install(nosEscritorio.Get(2));
+
+    client4.Start(Seconds(3.2));
+    client4.Stop(Seconds(10.0));
+
+    // CLIENTE 5 ========================================
+    UdpEchoClientHelper clienteVendas3(
+        ipsDevs.GetAddress(2), 
+        10);                   
+
+    clienteVendas3.SetAttribute(
+        "MaxPackets",
+        UintegerValue(18));
+
+    clienteVendas3.SetAttribute(
+        "Interval",
+        TimeValue(MilliSeconds(250)));
+
+    clienteVendas3.SetAttribute(
+        "PacketSize",
+        UintegerValue(600));
+
+    ApplicationContainer client5 =
+        clienteVendas3.Install(nosVendas.Get(0));
+
+    client5.Start(Seconds(2.8));
+    client5.Stop(Seconds(10.0));
+
+    // CLIENTE 6 ========================================
+    UdpEchoClientHelper clienteVendas4(
+        ipsDevs.GetAddress(1),
+        9);
+
+    clienteVendas4.SetAttribute(
+        "MaxPackets",
+        UintegerValue(25));
+
+    clienteVendas4.SetAttribute(
+        "Interval",
+        TimeValue(MilliSeconds(150)));
+
+    clienteVendas4.SetAttribute(
+        "PacketSize",
+        UintegerValue(300));
+
+    ApplicationContainer client6 =
+        clienteVendas4.Install(nosVendas.Get(2));
+
+    client6.Start(Seconds(3.5));
+    client6.Stop(Seconds(10.0));
+
+    // CLIENTE 7 ========================================
+    UdpEchoClientHelper clienteDev(
+        ipsEscritorio.GetAddress(2), 
+        11);          
+
+    clienteDev.SetAttribute(
+        "MaxPackets",
+        UintegerValue(16));
+
+    clienteDev.SetAttribute(
+        "Interval",
+        TimeValue(MilliSeconds(350)));
+
+    clienteDev.SetAttribute(
+        "PacketSize",
+        UintegerValue(700));
+
+    ApplicationContainer client7 =
+        clienteDev.Install(nosDevs.Get(2));
+
+    client7.Start(Seconds(2.2));
+    client7.Stop(Seconds(10.0));
 
     // CAPTURA PCAP, salva todos os pacotes em um arquivo .pcap, que pode ser analisado no wireshark
 
