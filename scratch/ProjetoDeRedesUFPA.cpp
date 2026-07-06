@@ -20,6 +20,9 @@ NS_LOG_COMPONENT_DEFINE("RedeEscritorioUFPA");
 
 int main(int argc, char *argv[]) // Declaracao de funcao main
 {
+    // Valor padrão do cenário.
+    // Caso o usuário não informe --cenario na linha de comando,
+    // a simulação executará o cenário 1.
     int cenario = 1;
 
     CommandLine cmd(__FILE__); // Funcao utilizada para receber parametros pela linha de comando
@@ -29,11 +32,16 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
     "Cenário da simulação (1, 2 ou 3)",
     cenario);
 
+    // Lê os argumentos informados na linha de comando
+    // e atualiza as variáveis correspondentes
     cmd.Parse(argc, argv);
 
     Time::SetResolution(Time::NS); // Define que toda a simulação utilizará nanosegundos como unidade interna de tempo.
 
     // 1. CRIAÇÃO DOS NÓS
+    // Cada NodeContainer representa uma rede local (LAN).
+    // O roteador participa das três redes para permitir
+    // comunicação entre departamentos.
 
     NS_LOG_INFO("Criando os departamentos...");
 
@@ -87,6 +95,8 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
 
     NS_LOG_INFO("Instalando pilha de Internet...");
 
+    // A pilha TCP/IP deve ser instalada em todos os dispositivos
+    // que irão enviar ou receber pacotes pela rede.
     InternetStackHelper stack; // Adiciona a pilha TCP/IP aos nós.
 
     // install é uma função do objeto stack para instalar: IPv4, udp, tcp e icmp nos computadores
@@ -96,7 +106,8 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
     stack.Install(nosDevs);
 
     // 4. ENDEREÇAMENTO IP
-
+    // Cada rede recebe uma faixa de endereços IP diferente,
+    // permitindo que o roteador encaminhe os pacotes entre elas.
     Ipv4AddressHelper address; // distribui endereços ip
 
     address.SetBase("192.168.10.0", "255.255.255.0"); // Define qual será a rede, 192.168.10.x
@@ -116,6 +127,9 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
     Ipv4GlobalRoutingHelper::PopulateRoutingTables(); // Calcula as tabelas de roteamento
 
     // 5. APLICAÇÕES
+    // Os servidores UDP Echo recebem um pacote e o devolvem
+    // ao cliente, sendo utilizados para testar comunicação
+    // entre os departamentos.
 
     //servidor 1
 
@@ -164,6 +178,11 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
         // VENDAS ---> DESENVOLVIMENTO
         // ==========================================
 
+
+        // Os clientes UDP enviam pacotes para os respectivos servidores.
+        // Cada cliente possui parâmetros diferentes de quantidade,
+        // intervalo e tamanho dos pacotes para representar
+        // diferentes padrões de tráfego.
         // Cliente 1
         UdpEchoClientHelper clienteVendas1(
             ipsDevs.GetAddress(1),
@@ -305,12 +324,16 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
     // DESENVOLVIMENTO ---> ADMINISTRAÇÃO
 
     // CAPTURA PCAP, salva todos os pacotes em um arquivo .pcap, que pode ser analisado no wireshark
-
+    // Habilita a captura de todos os pacotes trafegados.
+    // Os arquivos .pcap podem ser abertos posteriormente
+    // no Wireshark para análise detalhada.
     csmaEscritorio.EnablePcapAll("escritorio");
     csmaVendas.EnablePcapAll("vendas");
     csmaDevs.EnablePcapAll("devs");
 
     // FLOW MONITOR
+    // O FlowMonitor coleta estatísticas de cada fluxo
+    // de comunicação durante toda a simulação.
 
     FlowMonitorHelper flowmon;  // cria um monitor de rede
     Ptr<FlowMonitor> monitor =
@@ -320,8 +343,14 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
 
     Simulator::Stop(Seconds(10.0)); // Define quando a simulação termina
 
+    // Cria um arquivo XML que poderá ser aberto no NetAnim,
+    // permitindo visualizar graficamente a rede e os pacotes.
     AnimationInterface anim ("simulacao.xml");
 
+
+    // Define posições fixas para os nós apenas para fins
+    // de visualização no NetAnim.
+    // Essas coordenadas não influenciam na simulação da rede.
     // Roteador
     anim.SetConstantPosition(roteadorCentral, 50, 50);
 
@@ -342,13 +371,20 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
     anim.SetConstantPosition(nosDevs.Get(2), 85, 60);
     anim.SetConstantPosition(nosDevs.Get(3), 85, 80);
 
+    // Inicia a execução da simulação.
+    // A partir deste ponto todos os eventos agendados
+    // começam a ocorrer.
     Simulator::Run(); // Executa toda a simulação
 
     // RESULTADOS DA SIMULAÇÃO
 
+    // Atualiza as estatísticas de perda de pacotes
+    // antes da geração do relatório final.
     monitor->CheckForLostPackets(); // Conta quantos pacotes foram perdidos
 
     // Salva estatísticas completas em XML
+    // Exporta todas as estatísticas do FlowMonitor
+    // para um arquivo XML, permitindo análises posteriores.
     monitor->SerializeToXmlFile(
         "flowmon.xml",
         true,
@@ -365,6 +401,8 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
     std::cout << "   RELATÓRIO DA REDE DO ESCRITÓRIO\n";
     std::cout << "=========================================\n\n";
 
+    // Percorre todos os fluxos monitorados e imprime
+    // um relatório contendo métricas de desempenho.
     for (const auto &flow : stats)
     {
         Ipv4FlowClassifier::FiveTuple t =
@@ -372,6 +410,8 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
 
         const FlowMonitor::FlowStats &s = flow.second;
 
+        // Quantidade de pacotes que foram enviados,
+        // mas não chegaram ao destino.
         uint64_t pacotesPerdidos = s.lostPackets;
 
         std::cout << "Fluxo " << flow.first << "\n";
@@ -396,6 +436,8 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
 
         if (s.txPackets > 0)
         {
+            // Calcula a porcentagem de pacotes perdidos
+            // em relação ao total transmitido.
             double perda =
                 100.0 *
                 pacotesPerdidos /
@@ -418,6 +460,8 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
 
             if (s.rxPackets > 1)
             {
+                // Jitter representa a variação do atraso entre
+                // pacotes consecutivos recebidos.
                 double jitterMedio =
                     s.jitterSum.GetSeconds() /
                     (s.rxPackets - 1);
@@ -437,6 +481,8 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
 
             if (tempo > 0)
             {
+                // Throughput representa a taxa efetiva de dados
+                // recebidos durante o tempo de transmissão.
                 double throughput =
                     (s.rxBytes * 8.0) /
                     tempo /
@@ -467,6 +513,8 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
         std::cout << "=========================================\n\n";
     }
 
+    // Encerra completamente a simulação,
+    // liberando memória e recursos utilizados.
     Simulator::Destroy(); // Libera toda a memória utilizada pela simulação.
 
     return 0;
