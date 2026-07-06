@@ -165,10 +165,6 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
     // ======================================================
     // CLIENTES
     // O cenário é escolhido pela linha de comando:
-    //
-    // --cenario=1 -> Apenas Vendas -> Desenvolvimento
-    // --cenario=2 -> Cenário 1 + Administração -> Vendas
-    // --cenario=3 -> Cenário 1 + Cenário 2 + Desenvolvimento -> Administração
     // ======================================================
 
     if (cenario == 1 || cenario == 4)
