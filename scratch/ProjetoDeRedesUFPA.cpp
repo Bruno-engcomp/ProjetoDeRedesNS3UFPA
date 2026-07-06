@@ -20,7 +20,15 @@ NS_LOG_COMPONENT_DEFINE("RedeEscritorioUFPA");
 
 int main(int argc, char *argv[]) // Declaracao de funcao main
 {
+    int cenario = 1;
+
     CommandLine cmd(__FILE__); // Funcao utilizada para receber parametros pela linha de comando
+
+    cmd.AddValue(
+    "cenario",
+    "Cenário da simulação (1, 2 ou 3)",
+    cenario);
+
     cmd.Parse(argc, argv);
 
     Time::SetResolution(Time::NS); // Define que toda a simulação utilizará nanosegundos como unidade interna de tempo.
@@ -140,156 +148,161 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
         serverApp3.Start(Seconds(1.0));
         serverApp3.Stop(Seconds(10.0));
 
-    // CLIENTE 1 =============================
+    // ======================================================
+    // CLIENTES
+    // O cenário é escolhido pela linha de comando:
+    //
+    // --cenario=1 -> Apenas Vendas -> Desenvolvimento
+    // --cenario=2 -> Cenário 1 + Administração -> Vendas
+    // --cenario=3 -> Cenário 1 + Cenário 2 + Desenvolvimento -> Administração
+    // ======================================================
 
-    UdpEchoClientHelper clienteVendas( // Cria um cliente que envia pacotes para porta 9
-        ipsDevs.GetAddress(1),
-        9);
+    if (cenario == 1 || cenario == 4)
+    {
+        // ==========================================
+        // CENÁRIO 1
+        // VENDAS ---> DESENVOLVIMENTO
+        // ==========================================
 
-    clienteVendas.SetAttribute( // Configura o cliente com a quantia maxima de pacotes
-        "MaxPackets",
-        UintegerValue(10));
+        // Cliente 1
+        UdpEchoClientHelper clienteVendas1(
+            ipsDevs.GetAddress(1),
+            9);
 
-    clienteVendas.SetAttribute( // Configura o cliente com o intervalo de 0.5 segundos
-        "Interval",
-        TimeValue(Seconds(0.5)));
+        clienteVendas1.SetAttribute("MaxPackets", UintegerValue(10));
+        clienteVendas1.SetAttribute("Interval", TimeValue(Seconds(0.5)));
+        clienteVendas1.SetAttribute("PacketSize", UintegerValue(1024));
 
-    clienteVendas.SetAttribute( // Configura o tamanho do pacote do cliente
-        "PacketSize",
-        UintegerValue(1024));
+        ApplicationContainer app1 =
+            clienteVendas1.Install(nosVendas.Get(3));
 
-    ApplicationContainer clientApp =  // Guarda as aplicações instaladas
-        clienteVendas.Install(
-            nosVendas.Get(3));
+        app1.Start(Seconds(2.0));
+        app1.Stop(Seconds(10.0));
 
-    clientApp.Start(Seconds(2.0)); // Define quando a aplicação começa e quando termina
-    clientApp.Stop(Seconds(10.0));
 
-    // CLIENTE 2 =============================
+        // Cliente 2
+        UdpEchoClientHelper clienteVendas2(
+            ipsDevs.GetAddress(2),
+            10);
 
-    UdpEchoClientHelper clienteVendas2(
-    ipsDevs.GetAddress(2), // endereço IP do servidor de arquivos
-    10);
+        clienteVendas2.SetAttribute("MaxPackets", UintegerValue(15));
+        clienteVendas2.SetAttribute("Interval", TimeValue(MilliSeconds(300)));
+        clienteVendas2.SetAttribute("PacketSize", UintegerValue(512));
 
-    clienteVendas2.SetAttribute("MaxPackets", UintegerValue(15));
-    clienteVendas2.SetAttribute("Interval", TimeValue(MilliSeconds(300)));
-    clienteVendas2.SetAttribute("PacketSize", UintegerValue(512));
+        ApplicationContainer app2 =
+            clienteVendas2.Install(nosVendas.Get(1));
 
-    ApplicationContainer client2 =
-        clienteVendas2.Install(nosVendas.Get(1));
+        app2.Start(Seconds(2.5));
+        app2.Stop(Seconds(10.0));
 
-    client2.Start(Seconds(2.5));
-    client2.Stop(Seconds(10.0));
 
-    // CLIENTE 3 =============================
+        // Cliente 3
+        UdpEchoClientHelper clienteVendas3(
+            ipsDevs.GetAddress(2),
+            10);
 
-    UdpEchoClientHelper clienteEscritorio(
-    ipsDevs.GetAddress(1),
-    9);
+        clienteVendas3.SetAttribute("MaxPackets", UintegerValue(18));
+        clienteVendas3.SetAttribute("Interval", TimeValue(MilliSeconds(250)));
+        clienteVendas3.SetAttribute("PacketSize", UintegerValue(600));
 
-    clienteEscritorio.SetAttribute("MaxPackets", UintegerValue(20));
-    clienteEscritorio.SetAttribute("Interval", TimeValue(MilliSeconds(200)));
-    clienteEscritorio.SetAttribute("PacketSize", UintegerValue(256));
+        ApplicationContainer app3 =
+            clienteVendas3.Install(nosVendas.Get(0));
 
-    ApplicationContainer client3 =
-        clienteEscritorio.Install(nosEscritorio.Get(0));
+        app3.Start(Seconds(2.8));
+        app3.Stop(Seconds(10.0));
 
-    client3.Start(Seconds(3.0));
-    client3.Stop(Seconds(10.0));
 
-    // CLIENTE 4 ========================================
-    UdpEchoClientHelper clienteEscritorio2(
-        ipsDevs.GetAddress(1), 
-        9);                    
+        // Cliente 4
+        UdpEchoClientHelper clienteVendas4(
+            ipsDevs.GetAddress(1),
+            9);
 
-  
-    clienteEscritorio2.SetAttribute(
-        "MaxPackets",
-        UintegerValue(12));
+        clienteVendas4.SetAttribute("MaxPackets", UintegerValue(25));
+        clienteVendas4.SetAttribute("Interval", TimeValue(MilliSeconds(150)));
+        clienteVendas4.SetAttribute("PacketSize", UintegerValue(300));
 
-  
-    clienteEscritorio2.SetAttribute(
-        "Interval",
-        TimeValue(MilliSeconds(400)));
+        ApplicationContainer app4 =
+            clienteVendas4.Install(nosVendas.Get(2));
 
-    clienteEscritorio2.SetAttribute(
-        "PacketSize",
-        UintegerValue(400));
+        app4.Start(Seconds(3.5));
+        app4.Stop(Seconds(10.0));
+    }
 
-    ApplicationContainer client4 =
-        clienteEscritorio2.Install(nosEscritorio.Get(2));
+    if (cenario == 2 || cenario == 4)
+    {
+        // ==========================================
+        // CENÁRIO 2
+        // ADMINISTRAÇÃO ---> VENDAS
+        // ==========================================
 
-    client4.Start(Seconds(3.2));
-    client4.Stop(Seconds(10.0));
+        // Servidor em Vendas
+        UdpEchoServerHelper servidorVendas(12);
 
-    // CLIENTE 5 ========================================
-    UdpEchoClientHelper clienteVendas3(
-        ipsDevs.GetAddress(2), 
-        10);                   
+        ApplicationContainer serverVendas =
+            servidorVendas.Install(nosVendas.Get(0));
 
-    clienteVendas3.SetAttribute(
-        "MaxPackets",
-        UintegerValue(18));
+        serverVendas.Start(Seconds(1.0));
+        serverVendas.Stop(Seconds(10.0));
 
-    clienteVendas3.SetAttribute(
-        "Interval",
-        TimeValue(MilliSeconds(250)));
+        // Cliente 5
+        UdpEchoClientHelper clienteAdm1(
+            ipsVendas.GetAddress(1),
+            12);
 
-    clienteVendas3.SetAttribute(
-        "PacketSize",
-        UintegerValue(600));
+        clienteAdm1.SetAttribute("MaxPackets", UintegerValue(20));
+        clienteAdm1.SetAttribute("Interval", TimeValue(MilliSeconds(200)));
+        clienteAdm1.SetAttribute("PacketSize", UintegerValue(256));
 
-    ApplicationContainer client5 =
-        clienteVendas3.Install(nosVendas.Get(0));
+        ApplicationContainer app5 =
+            clienteAdm1.Install(nosEscritorio.Get(0));
 
-    client5.Start(Seconds(2.8));
-    client5.Stop(Seconds(10.0));
+        app5.Start(Seconds(3.0));
+        app5.Stop(Seconds(10.0));
 
-    // CLIENTE 6 ========================================
-    UdpEchoClientHelper clienteVendas4(
-        ipsDevs.GetAddress(1),
-        9);
+        // Cliente 6
+        UdpEchoClientHelper clienteAdm2(
+            ipsVendas.GetAddress(1),
+            12);
 
-    clienteVendas4.SetAttribute(
-        "MaxPackets",
-        UintegerValue(25));
+        clienteAdm2.SetAttribute("MaxPackets", UintegerValue(12));
+        clienteAdm2.SetAttribute("Interval", TimeValue(MilliSeconds(400)));
+        clienteAdm2.SetAttribute("PacketSize", UintegerValue(400));
 
-    clienteVendas4.SetAttribute(
-        "Interval",
-        TimeValue(MilliSeconds(150)));
+        ApplicationContainer app6 =
+            clienteAdm2.Install(nosEscritorio.Get(2));
 
-    clienteVendas4.SetAttribute(
-        "PacketSize",
-        UintegerValue(300));
+        app6.Start(Seconds(3.2));
+        app6.Stop(Seconds(10.0));
+    }
 
-    ApplicationContainer client6 =
-        clienteVendas4.Install(nosVendas.Get(2));
+    if (cenario == 3 || cenario == 4)
+    {
+        // ==========================================
+        // CENÁRIO 3
+        // DESENVOLVIMENTO ---> ADMINISTRAÇÃO
+        // ==========================================
 
-    client6.Start(Seconds(3.5));
-    client6.Stop(Seconds(10.0));
+        // Cliente 7
+        UdpEchoClientHelper clienteDev(
+            ipsEscritorio.GetAddress(2),
+            11);
 
-    // CLIENTE 7 ========================================
-    UdpEchoClientHelper clienteDev(
-        ipsEscritorio.GetAddress(2), 
-        11);          
+        clienteDev.SetAttribute("MaxPackets", UintegerValue(16));
+        clienteDev.SetAttribute("Interval", TimeValue(MilliSeconds(350)));
+        clienteDev.SetAttribute("PacketSize", UintegerValue(700));
 
-    clienteDev.SetAttribute(
-        "MaxPackets",
-        UintegerValue(16));
+        ApplicationContainer app7 =
+            clienteDev.Install(nosDevs.Get(2));
 
-    clienteDev.SetAttribute(
-        "Interval",
-        TimeValue(MilliSeconds(350)));
+        app7.Start(Seconds(2.2));
+        app7.Stop(Seconds(10.0));
+    }
 
-    clienteDev.SetAttribute(
-        "PacketSize",
-        UintegerValue(700));
-
-    ApplicationContainer client7 =
-        clienteDev.Install(nosDevs.Get(2));
-
-    client7.Start(Seconds(2.2));
-    client7.Stop(Seconds(10.0));
+    // CENÁRIO 4
+    // TODOS AO MESMO TEMPO
+    // VENDAS ---> DESENVOLVIMENTO
+    // ADMINISTRAÇÃO ---> VENDAS
+    // DESENVOLVIMENTO ---> ADMINISTRAÇÃO
 
     // CAPTURA PCAP, salva todos os pacotes em um arquivo .pcap, que pode ser analisado no wireshark
 
