@@ -323,9 +323,6 @@ int main(int argc, char *argv[]) // Declaracao de funcao main
     // Habilita a captura de todos os pacotes trafegados.
     // Os arquivos .pcap podem ser abertos posteriormente
     // no Wireshark para análise detalhada.
-    csmaEscritorio.EnablePcapAll("escritorio");
-    csmaVendas.EnablePcapAll("vendas");
-    csmaDevs.EnablePcapAll("devs");
 
     // FLOW MONITOR
     // O FlowMonitor coleta estatísticas de cada fluxo
